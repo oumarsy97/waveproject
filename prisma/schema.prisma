@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Type {
+  DEPOT
+  RETRAIT
+}
+
+enum Statut {
+  ACTIF
+  INACTIF
+  BLOQUE
+}
+
+enum StatutTransaction {
+  EN_ATTENTE
+  COMPLETEE
+  ANNULEE
+  ECHEC
+}
+
+enum TypeNotification {
+  TRANSACTION
+  SECURITE
+  COMPTE
+  PROMOTION
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  telephone String   @unique
+  prenom    String
+  nom       String
+  code      Int
+  montant   Int     @default(0)
+  email     String? @unique
+  estVerifie Boolean @default(false)
+  limiteMensuelle Int @default(1000000)
+  derniereConnexion DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Statut du client
+  statut Statut @default(ACTIF)
+
+  // Transferts envoyés et reçus
+  transfertsEnvoyes     Transfert[] @relation("ClientSentTransferts")
+  transfertsRecus       Transfert[] @relation("ClientReceivedTransferts")
+  
+  // Historique des contacts fréquents (derniers transferts)
+  contactsFrequents    ContactFrequent[]
+  
+  // Autres relations
+  transactions         Transaction[] @relation("ClientSentTransferts")
+  credits             Credit[] @relation("ClientSentTransferts")
+  notifications       Notification[] 
+  historiqueSessions  SessionConnexion[]
+}
+
+model ContactFrequent {
+  id          Int      @id @default(autoincrement())
+  clientId    Int
+  client      Client   @relation(fields: [clientId], references: [id])
+  telephone   String
+  nombreTransactions Int @default(1)
+  dernierTransfert DateTime @default(now())
+  montantTotal Int @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([clientId, telephone])
+}
+
+model SessionConnexion {
+  id          Int      @id @default(autoincrement())
+  clientId    Int
+  client      Client   @relation(fields: [clientId], references: [id])
+  ipAddress   String
+  appareil    String
+  localisation String?
+  createdAt   DateTime @default(now())
+}
+
+model Code {
+  id          Int      @id @default(autoincrement())
+  code        Int
+  idClient    Int
+  tentatives  Int     @default(0)
+  estBloque   Boolean @default(false)
+  expireAt    DateTime 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Service {
+  id          Int      @id @default(autoincrement())
+  nom         String
+  telephone   String   @unique
+  montant     Int     @default(0)
+  code        Int
+  logo        String?
+  description String?
+  categories  ServiceCategorie[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ServiceCategorie {
+  id        Int      @id @default(autoincrement())
+  nom       String
+  services  Service[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transfert {
+  id          Int      @id @default(autoincrement())
+  idEmeteur   Int
+  idRecepteur Int
+  montant     Int
+  statut      StatutTransaction @default(EN_ATTENTE)
+  reference   String   @unique
+  frais       Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  emeteur     Client   @relation("ClientSentTransferts", fields: [idEmeteur], references: [id])
+  recepteur   Client   @relation("ClientReceivedTransferts", fields: [idRecepteur], references: [id])
+}
+
+model Operateur {
+  id          Int      @id @default(autoincrement())
+  nom         String
+  addresse    String
+  telephone   String   @unique
+  montant     Int     @default(0)
+  code        Int
+  tauxCommission Float @default(0.02)
+  transactions Transaction[] @relation("ClientReceivedTransferts")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  montant     Int
+  idOperateur Int
+  idClient    Int
+  reference   String   @unique
+  statut      StatutTransaction @default(EN_ATTENTE)
+  type        Type    @default(DEPOT)
+  frais       Int     @default(0)
+  client      Client   @relation("ClientSentTransferts", fields: [idClient], references: [id])
+  operateur   Operateur @relation("ClientReceivedTransferts", fields: [idOperateur], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Credit {
+  id        Int      @id @default(autoincrement())
+  montant   Int
+  idClient  Int
+  telephone String   
+  statut    StatutTransaction @default(EN_ATTENTE)
+  reference String   @unique
+  client    Client   @relation("ClientSentTransferts", fields: [idClient], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  clientId  Int
+  client    Client   @relation(fields: [clientId], references: [id])
+  titre     String
+  message   String
+  type      TypeNotification
+  estLue    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
