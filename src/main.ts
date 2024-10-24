@@ -10,6 +10,13 @@ async function bootstrap() {
    .setDescription('Description de l\'API')
    .setVersion('1.0')
    .build();
+
+   //cors
+   app.enableCors({
+     origin: '*',
+     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+     credentials: true
+   });
  
  const document = SwaggerModule.createDocument(app, config);
  SwaggerModule.setup('api', app, document); // 'api' est l'URL pour accéder à Swagger
