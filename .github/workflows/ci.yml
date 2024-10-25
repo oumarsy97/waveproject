@@ -20,7 +20,7 @@ jobs:
         cache: 'npm'
     
     - name: Install dependencies
-      run: npm install
+      run: npm ci
     
     - name: Build
       run: npm run build
@@ -38,5 +38,10 @@ jobs:
     
     steps:
     - name: Deploy to Render
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
       run: |
-        curl -X POST "https://api.render.com/deploy/srv-rnd_cM0iM2XkhNshPFIptMwRvPibp9Gu"
+        curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+        -H "accept: application/json" \
+        -H "authorization: Bearer $RENDER_API_KEY"
