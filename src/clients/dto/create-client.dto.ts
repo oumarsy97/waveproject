@@ -20,7 +20,7 @@ export class CreateClientDto {
     @ApiProperty()
     @IsInt()
     @IsNotEmpty()
-    code: number;
+    code: Number;
   
     @ApiProperty({ required: false })
     @IsEmail()

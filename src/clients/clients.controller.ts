@@ -12,6 +12,8 @@ export class ClientsController {
 
   @Post()
   create(@Body() createClientDto: CreateClientDto) {
+    //crypter le code 
+    
     return this.clientsService.create(createClientDto);
   }
 

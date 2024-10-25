@@ -37,7 +37,7 @@ model Client {
   telephone String   @unique
   prenom    String
   nom       String
-  code      Int
+  code      String
   montant   Int     @default(0)
   email     String? @unique
   estVerifie Boolean @default(false)
