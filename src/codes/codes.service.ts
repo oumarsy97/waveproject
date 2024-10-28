@@ -11,7 +11,7 @@ export class CodesService {
     return this.prisma.code.create({
       data: {
         code: createCodeDto.code,
-        idClient: createCodeDto.idClient,
+        idCompte: createCodeDto.idCompte,
         expireAt: new Date( new Date().setDate( new Date().getDate() + 1 ) )
       }
     })
@@ -47,4 +47,49 @@ export class CodesService {
       }
     })
   }
+
+  //validate code
+
+  async validate(idCompte: number, code: string) {
+    const codeValidation = await this.prisma.code.findFirst({
+      where: {
+        idCompte: +idCompte,
+        code: +code
+
+      }
+    });
+
+    if (!codeValidation) {
+      throw new Error('Invalid code');
+    }
+
+    if (codeValidation.expireAt < new Date()) {
+      throw new Error('Code expired');
+    }
+    //update code
+     this.prisma.code.update({
+      where: {
+        id: codeValidation.id,
+        code: +code
+
+      },
+      data: {
+        estBloque: true
+      }
+    })
+
+    //activer le compte
+    return this.prisma.compte.update({
+      where: {
+        id: +idCompte
+      },
+      data: {
+        statut: 'ACTIF',
+        estVerifie: true
+      }
+    })
+
+    
+  }
+   
 }

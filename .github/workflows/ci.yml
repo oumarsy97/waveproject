@@ -16,16 +16,20 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '22.x'
+        node-version: '18.x'
         cache: 'npm'
     
     - name: Install dependencies
       run: npm ci
+      
+    - name: Install ESLint dependencies
+      run: npm install --save-dev @typescript-eslint/eslint-plugin@^6.0.0 @typescript-eslint/parser@^6.0.0 eslint@^8.0.0
     
     - name: Build
       run: npm run build
     
-  
+    - name: Run tests
+      run: npm test
       
     - name: Run linter
       run: npm run lint
@@ -40,6 +44,7 @@ jobs:
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+   
       run: |
         curl -X POST "https://api.render.com/deploy/srv-rnd_cM0iM2XkhNshPFIptMwRvPibp9Gu" \
         -H "accept: application/json" \

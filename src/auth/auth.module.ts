@@ -7,16 +7,18 @@ import { JwtStrategy } from './jwt.strategy';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ClientsService } from 'src/clients/clients.service';
+import { SmsModule } from 'src/sms/sms.module';
 
 @Module({
   imports: [
     ClientsModule,
     PrismaModule,
     PassportModule,
+     SmsModule,
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '60s' },
+      signOptions: { expiresIn: '1d' },
     }),
   ],
   providers: [AuthService, JwtStrategy, ClientsService],

@@ -33,4 +33,9 @@ export class CodesController {
   remove(@Param('id') id: string) {
     return this.codesService.remove(+id);
   }
+
+  @Get('validate/:idCompte/:code')
+  async validate(@Param('idCompte') idCompte: number, @Param('code') code: string) {
+    return this.codesService.validate(idCompte, code);
+  }
 }

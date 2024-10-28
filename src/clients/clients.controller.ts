@@ -11,9 +11,7 @@ export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
   @Post()
-  create(@Body() createClientDto: CreateClientDto) {
-    //crypter le code 
-    
+  create(@Body() createClientDto: CreateClientDto) {    
     return this.clientsService.create(createClientDto);
   }
 

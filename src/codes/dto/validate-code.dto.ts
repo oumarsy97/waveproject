@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import {  IsEmail, IsInt, IsNotEmpty, IsOptional, IsNumber, Length, isDate } from "class-validator";
 
-export class CreateCodeDto {
+export class ValidateCodeDto {
 
     @ApiProperty()
     @IsInt()
