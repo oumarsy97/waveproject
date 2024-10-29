@@ -24,6 +24,10 @@ enum StatutTransaction {
   ANNULEE
   ECHEC
 }
+enum typeTransfer {
+  ENVOI
+  RETRAIT
+}
 
 enum TypeNotification {
   TRANSACTION
@@ -45,6 +49,7 @@ model Compte {
   email     String?
   code      String
   montant   Int     @default(0)
+  qrcode    String?
   estVerifie Boolean @default(false)
   statut Statut @default(INACTIF)
   limiteMensuelle Int @default(1000000)
@@ -56,7 +61,7 @@ model Compte {
 
   Operateur Operateur[]
 
-  Code Code[]
+  Transaction Transaction[] @relation("ClientSentTransferts")
 }
 
 model Client {
@@ -75,7 +80,6 @@ model Client {
   // Historique des contacts fréquents (derniers transferts)
   contactsFrequents    ContactFrequent[]
   // Autres relations
-  transactions         Transaction[] @relation("ClientSentTransferts")
   credits             Credit[] @relation("ClientSentTransferts")
   notifications       Notification[] 
   historiqueSessions  SessionConnexion[]
@@ -113,7 +117,6 @@ model Code {
   idCompte    Int
   tentatives  Int     @default(0)
   estBloque   Boolean @default(false)
-  compte      Compte   @relation(fields: [idCompte], references: [id])
   expireAt    DateTime 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -145,6 +148,7 @@ model Transfert {
   montant     Int
   statut      StatutTransaction @default(EN_ATTENTE)
   reference   String   @unique
+  type        typeTransfer @default(ENVOI)
   frais       Int     @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -156,8 +160,8 @@ model Transfert {
 model Operateur {
   id          Int      @id @default(autoincrement())
   nom         String
+  prenom      String
   addresse    String
-  code        Int
   idCompte    Int
   compte    Compte   @relation(fields: [idCompte], references: [id])
   tauxCommission Float @default(0.02)
@@ -175,7 +179,7 @@ model Transaction {
   statut      StatutTransaction @default(EN_ATTENTE)
   type        Type    @default(DEPOT)
   frais       Int     @default(0)
-  client      Client   @relation("ClientSentTransferts", fields: [idClient], references: [id])
+  compte      Compte   @relation("ClientSentTransferts", fields: [idClient], references: [id])
   operateur   Operateur @relation("ClientReceivedTransferts", fields: [idOperateur], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

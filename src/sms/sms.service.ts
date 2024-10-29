@@ -21,7 +21,7 @@ export class SmsService {
         return JSON.stringify({
             messages: [
                 {
-                    destinations: [{ to: '221781807229' }],
+                    destinations: [{ to:'221'+data.to }],
                     from: 'WAVE',
                     text: data.text,
                 },

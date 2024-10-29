@@ -12,13 +12,14 @@ import { ComptesModule } from './comptes/comptes.module';
 import { SmsService } from './sms/sms.service';
 import { SmsModule } from './sms/sms.module';
 import { ConfigModule } from '@nestjs/config';
+import { TransactionModule } from './transaction/transaction.module';
 
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // Pour rendre ConfigModule global
-    }),ClientsModule, PrismaModule, CodesModule, AuthModule, ComptesModule, SmsModule],
+    }),ClientsModule, PrismaModule, CodesModule, AuthModule, ComptesModule, SmsModule, TransactionModule],
   controllers: [AppController, ProtectedController, ComptesController],
   providers: [AppService, ClientsModule, ComptesService, SmsService],
 }) 

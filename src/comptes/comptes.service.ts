@@ -3,7 +3,7 @@ import { CreateCompteDto } from './dto/create-compte.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateCompteDto } from './dto/update-compte.dto';
 import * as jwt from 'jsonwebtoken'; // Import de jsonwebtoken pour décoder le token
-import { log } from 'console';
+
 
 @Injectable()
 export class ComptesService {
@@ -30,9 +30,15 @@ export class ComptesService {
     return `This action returns all comptes`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} compte`;
+  async findOne(id: number) {
+    const compte = await this.prisma.compte.findFirst({
+      where: { id },
+      include: { Client: true },
+    });
+  
+    return { ...compte, client: compte.Client[0] }; // Renomme la propriété Client en client
   }
+  
 
   update(id: number, updateCompteDto: UpdateCompteDto) {
     return `This action updates a #${id} compte`;

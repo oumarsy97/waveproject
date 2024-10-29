@@ -1,11 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UnauthorizedException, UseGuards, Req } from '@nestjs/common';
 import { ComptesService } from './comptes.service';
 import { CreateCompteDto } from './dto/create-compte.dto';
 import { UpdateCompteDto } from './dto/update-compte.dto';
+import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
+import { Request } from 'express'; // Assurez-vous d'importer Request d'Express
+import { ApiTags } from '@nestjs/swagger';
+
 
 @Controller('comptes')
+@ApiTags('comptes')
 export class ComptesController {
   constructor(private readonly comptesService: ComptesService) {}
+//getProfile
+@Get('profile')
+@UseGuards(JwtAuthGuard)
+getProfile(@Req() req: Request) {
+   const user = req.user;
+   const compte = this.comptesService.findOne(+user);
+
+  return compte
+}
 
   @Post()
   create(@Body() createCompteDto: CreateCompteDto) {
@@ -21,7 +35,7 @@ export class ComptesController {
 
     return this.comptesService.findOneByToken(token);
   }
-
+  
   @Get()
   findAll() {
     return this.comptesService.findAll();
