@@ -10,6 +10,7 @@ datasource db {
 enum Type {
   DEPOT
   RETRAIT
+  TRANSFERT
 }
 
 enum Statut {
@@ -42,6 +43,13 @@ enum TypeCompte {
   ADMIN
 }
 
+enum statusProgramme {
+  EN_ATTENTE
+  VALIDE
+  ECHEC
+  ANNULER
+}
+
 model Compte {
   id        Int      @id @default(autoincrement())
   type      TypeCompte     @default(CLIENT)
@@ -62,6 +70,16 @@ model Compte {
   Operateur Operateur[]
 
   Transaction Transaction[] @relation("ClientSentTransferts")
+
+  trasfertprogramme trasfertprogramme[] @relation("ClientSentTransferts")
+
+  trasfertprogrammes trasfertprogramme[] @relation("ClientReceivedTransferts")
+
+  Transactions Transaction[] @relation("ClientSentTransfert")
+
+  TransfertRecurrent TransfertRecurrent[] @relation("ClientSentRecurrents")
+
+  TransfertRecurrents TransfertRecurrent[] @relation("ClientReceivedRecurrents")
 }
 
 model Client {
@@ -74,9 +92,6 @@ model Client {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   // Transferts envoyés et reçus
-  transfertsEnvoyes     Transfert[] @relation("ClientSentTransferts")
-  transfertsRecus       Transfert[] @relation("ClientReceivedTransferts")
-  
   // Historique des contacts fréquents (derniers transferts)
   contactsFrequents    ContactFrequent[]
   // Autres relations
@@ -141,21 +156,21 @@ model ServiceCategorie {
   updatedAt DateTime @updatedAt
 }
 
-model Transfert {
-  id          Int      @id @default(autoincrement())
-  idEmeteur   Int
-  idRecepteur Int
-  montant     Int
-  statut      StatutTransaction @default(EN_ATTENTE)
-  reference   String   @unique
-  type        typeTransfer @default(ENVOI)
-  frais       Int     @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// model Transfert {
+//   id          Int      @id @default(autoincrement())
+//   idEmeteur   Int
+//   idRecepteur Int
+//   montant     Int
+//   statut      StatutTransaction @default(EN_ATTENTE)
+//   reference   String   @unique
+//   type        typeTransfer @default(ENVOI)
+//   frais       Int     @default(0)
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
   
-  emeteur     Client   @relation("ClientSentTransferts", fields: [idEmeteur], references: [id])
-  recepteur   Client   @relation("ClientReceivedTransferts", fields: [idRecepteur], references: [id])
-}
+//   emeteur     Client   @relation("ClientSentTransferts", fields: [idEmeteur], references: [id])
+//   recepteur   Client   @relation("ClientReceivedTransferts", fields: [idRecepteur], references: [id])
+// }
 
 model Operateur {
   id          Int      @id @default(autoincrement())
@@ -173,16 +188,48 @@ model Operateur {
 model Transaction {
   id          Int      @id @default(autoincrement())
   montant     Int
-  idOperateur Int
+  idOperateur Int?
   idClient    Int
+  idEmeteur   Int?
+  emeteur     Compte?   @relation("ClientSentTransfert", fields: [idEmeteur], references: [id])
   reference   String   @unique
   statut      StatutTransaction @default(EN_ATTENTE)
   type        Type    @default(DEPOT)
   frais       Int     @default(0)
   compte      Compte   @relation("ClientSentTransferts", fields: [idClient], references: [id])
-  operateur   Operateur @relation("ClientReceivedTransferts", fields: [idOperateur], references: [id])
+  operateur   Operateur? @relation("ClientReceivedTransferts", fields: [idOperateur], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model trasfertprogramme {
+  id        Int      @id @default(autoincrement())
+  montant   Int
+  idEmeteur  Int
+  idRecepteur Int
+  emmeteur    Compte   @relation("ClientSentTransferts", fields: [idEmeteur], references: [id])
+  recepteur   Compte @relation("ClientReceivedTransferts", fields: [idRecepteur], references: [id])
+  statut    statusProgramme @default(EN_ATTENTE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  dateExecution DateTime
+}
+
+model TransfertRecurrent {
+  id           Int      @id @default(autoincrement())
+  montant      Int
+  idEmeteur    Int
+  idRecepteur  Int
+  jourDuMois   Int      // jour d'exécution (1-31)
+  heure        Int      // heure d'exécution (0-23)
+  minute       Int      // minute d'exécution (0-59)
+  statut       String   @default("ACTIF") // ACTIF, SUSPENDU, TERMINE
+  emmeteur     Compte   @relation("ClientSentRecurrents", fields: [idEmeteur], references: [id])
+  recepteur    Compte   @relation("ClientReceivedRecurrents", fields: [idRecepteur], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  dernierExecutionDate DateTime?
+  prochainExecutionDate DateTime
 }
 
 model Credit {
@@ -195,6 +242,7 @@ model Credit {
   client    Client   @relation("ClientSentTransferts", fields: [idClient], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
 }
 
 model Notification {

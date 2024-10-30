@@ -13,13 +13,16 @@ import { SmsService } from './sms/sms.service';
 import { SmsModule } from './sms/sms.module';
 import { ConfigModule } from '@nestjs/config';
 import { TransactionModule } from './transaction/transaction.module';
-
+import { TransfertModule } from './transfert/transfert.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TransfertRecurentModule } from './transfert-recurent/transfert-recurent.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true, // Pour rendre ConfigModule global
-    }),ClientsModule, PrismaModule, CodesModule, AuthModule, ComptesModule, SmsModule, TransactionModule],
+    }),ClientsModule, PrismaModule, CodesModule, AuthModule, ComptesModule, SmsModule, TransactionModule, TransfertModule, TransfertRecurentModule],
   controllers: [AppController, ProtectedController, ComptesController],
   providers: [AppService, ClientsModule, ComptesService, SmsService],
 }) 

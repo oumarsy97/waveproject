@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 
 @Controller('transaction')
 @ApiTags('transaction')
@@ -23,6 +23,14 @@ export class TransactionController {
     return this.transactionService.create(createTransactionDto);
   }
 
+  @Get('transactionsprofile')
+@UseGuards(JwtAuthGuard)
+getProfile(@Req() req: Request & { user: number }) {
+   const user = req.user;
+   const transactions = this.transactionService.findbyCompte(+user);
+
+  return transactions;
+}
   @Get()
   findAll() {
     return this.transactionService.findAll();

@@ -132,6 +132,8 @@ export class TransactionService {
     }
   }
 
+  
+
   async findOne(id: number) {
     try {
       const transaction = await this.prisma.transaction.findUnique({
@@ -156,6 +158,36 @@ export class TransactionService {
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
+  }
+
+  async findbyCompte(id: number) {
+    try {
+      return await this.prisma.transaction.findMany({
+        where: { OR: [{ idEmeteur: id }, { idClient: id }] },
+        include: {
+          compte: true,
+          operateur: {
+            select: {
+              nom: true,
+              prenom: true
+            } 
+          },
+          emeteur: true,
+          
+
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+    } catch (error) {
+      throw new HttpException(
+        'Erreur lors de la sélection des transactions',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+      
+  
   }
 
   async update(id: number, updateTransactionDto: UpdateTransactionDto) {
