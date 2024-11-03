@@ -21,6 +21,14 @@ getProfile(@Req() req: Request) {
   return compte
 }
 
+  @Get('others')
+  @UseGuards(JwtAuthGuard)
+  findbyCompte(@Req() req: Request) {
+    const user = req.user;
+   return this.comptesService.findbyCompte(+user);
+    
+  }
+
   @Post()
   create(@Body() createCompteDto: CreateCompteDto) {
     return this.comptesService.create(createCompteDto);

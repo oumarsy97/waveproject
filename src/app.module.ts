@@ -16,13 +16,14 @@ import { TransactionModule } from './transaction/transaction.module';
 import { TransfertModule } from './transfert/transfert.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TransfertRecurentModule } from './transfert-recurent/transfert-recurent.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true, // Pour rendre ConfigModule global
-    }),ClientsModule, PrismaModule, CodesModule, AuthModule, ComptesModule, SmsModule, TransactionModule, TransfertModule, TransfertRecurentModule],
+    }),ClientsModule, PrismaModule, CodesModule, AuthModule, ComptesModule, SmsModule, TransactionModule, TransfertModule, TransfertRecurentModule, NotificationsModule],
   controllers: [AppController, ProtectedController, ComptesController],
   providers: [AppService, ClientsModule, ComptesService, SmsService],
 }) 

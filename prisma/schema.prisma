@@ -215,6 +215,12 @@ model trasfertprogramme {
   dateExecution DateTime
 }
 
+enum typeProgramme {
+JOURNALIERE
+HEBDOMODAIRE
+MENSUELLE 
+}
+
 model TransfertRecurrent {
   id           Int      @id @default(autoincrement())
   montant      Int
@@ -223,6 +229,7 @@ model TransfertRecurrent {
   jourDuMois   Int      // jour d'exécution (1-31)
   heure        Int      // heure d'exécution (0-23)
   minute       Int      // minute d'exécution (0-59)
+  type         typeProgramme @default(JOURNALIERE)
   statut       String   @default("ACTIF") // ACTIF, SUSPENDU, TERMINE
   emmeteur     Compte   @relation("ClientSentRecurrents", fields: [idEmeteur], references: [id])
   recepteur    Compte   @relation("ClientReceivedRecurrents", fields: [idRecepteur], references: [id])

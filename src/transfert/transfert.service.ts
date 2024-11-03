@@ -10,8 +10,81 @@ export class TransfertService {
 
   async create(createTransfertDto: CreateTransfertDto) {
     const { idEmetteur, idRecepteur, montant } = createTransfertDto;
-    // ... reste du code existant ...
+  
+    return await this.prisma.$transaction(async (tx) => {
+      try {
+        const emetteur = await tx.compte.findUnique({
+          where: { id: idEmetteur },
+        });
+  
+        const recepteur = await tx.compte.findUnique({
+          where: { id: idRecepteur },
+        });
+  
+        if (!emetteur || !recepteur) {
+          throw new Error('Compte inexistant');
+        }
+  
+        if (emetteur.montant < montant) {
+          throw new Error('Solde insuffisant');
+        }
+  
+        if (recepteur.montant + montant > recepteur.limiteMensuelle) {
+          throw new Error('Limite mensuelle atteinte');
+        }
+  
+        // Décrémenter le montant de l'émetteur
+        await tx.compte.update({
+          where: { id: idEmetteur },
+          data: { montant: { decrement: montant } },
+        });
+  
+        // Incrémenter le montant du récepteur
+        await tx.compte.update({
+          where: { id: idRecepteur },
+          data: { montant: { increment: montant } },
+        });
+  
+        // Créer l'enregistrement de la transaction
+      const transaction =  await tx.transaction.create({
+          data: {
+            montant,
+            idEmeteur: idEmetteur,
+            idClient: idRecepteur,
+            type: 'TRANSFERT',
+            statut: 'COMPLETEE',
+            reference: `${idEmetteur}-${idRecepteur}-${Date.now()}`,
+          },
+        });
+  
+        // Envoyer les notifications aux deux parties
+        await tx.notification.create({
+          data: {
+            clientId: idEmetteur,
+            titre: 'Transfert effectué',
+            message: `Votre transfert de ${montant} FCFA a été effectué sur le numéro ${recepteur.telephone}`,
+            type: 'COMPTE',
+          },
+        });
+  
+        await tx.notification.create({
+          data: {
+            clientId: idRecepteur,
+            titre: 'Transfert Reçu',
+            message: `Vous avez reçu ${montant} FCFA de ${emetteur.telephone}`,
+            type: 'COMPTE',
+          },
+        });
+
+        return  transaction;
+  
+      } catch (error) {
+        console.error('Erreur lors du transfert:', error);
+        throw new Error(`Échec du transfert: ${error.message}`);
+      }
+    });
   }
+  
 
   async scheduleTransfert(createTransfertDto: CreateTransfertDto) {
     const { montant, idEmetteur, idRecepteur, dateExecution } = createTransfertDto;
@@ -39,7 +112,7 @@ export class TransfertService {
     });
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_HOUR)
   async executeScheduledTransfers() {
     try {
       const transfertsAExecuter = await this.prisma.trasfertprogramme.findMany({

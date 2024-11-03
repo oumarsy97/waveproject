@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { ApiProperty } from '@nestjs/swagger';
+
+export enum TypeProgramme {
+  JOURNALIERE = 'JOURNALIERE',
+  HEBDOMODAIRE = 'HEBDOMODAIRE',
+  MENSUELLE = 'MENSUELLE',
+}
 
 export class CreateRecurringTransferDto {
   @ApiProperty()
@@ -16,6 +22,8 @@ export class CreateRecurringTransferDto {
   heure: number; // 0-23
   @ApiProperty()
   minute: number; // 0-59
+  @ApiProperty({ enum: TypeProgramme, default: TypeProgramme.JOURNALIERE })
+  type: TypeProgramme;
 }
 
 @Injectable()
@@ -23,7 +31,6 @@ export class TransfertRecurrentService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createRecurringTransfer(dto: CreateRecurringTransferDto) {
-    // Validation des entrées
     if (dto.jourDuMois < 1 || dto.jourDuMois > 31) {
       throw new Error('Le jour du mois doit être entre 1 et 31');
     }
@@ -34,11 +41,11 @@ export class TransfertRecurrentService {
       throw new Error('Les minutes doivent être entre 0 et 59');
     }
 
-    // Calculer la prochaine date d'exécution
     const prochainExecutionDate = this.calculateNextExecutionDate(
       dto.jourDuMois,
       dto.heure,
-      dto.minute
+      dto.minute,
+      dto.type
     );
 
     return await this.prisma.transfertRecurrent.create({
@@ -49,66 +56,50 @@ export class TransfertRecurrentService {
         jourDuMois: dto.jourDuMois,
         heure: dto.heure,
         minute: dto.minute,
+        type: dto.type,
         prochainExecutionDate,
       },
     });
   }
 
-  private calculateNextExecutionDate(jour: number, heure: number, minute: number): Date {
+  private calculateNextExecutionDate(jour: number, heure: number, minute: number, type: TypeProgramme): Date {
     const now = new Date();
-    let nextDate = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      jour,
-      heure,
-      minute,
-      0
-    );
+    let nextDate = new Date(now);
 
-    // Si la date calculée est dans le passé, passer au mois suivant
-    if (nextDate <= now) {
-      nextDate = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        jour,
-        heure,
-        minute,
-        0
-      );
-    }
-
-    // Ajuster si le jour n'existe pas dans le mois (ex: 31 février)
-    if (nextDate.getDate() !== jour) {
-      nextDate = new Date(
-        now.getFullYear(),
-        now.getMonth() + 2,
-        jour,
-        heure,
-        minute,
-        0
-      );
+    if (type === TypeProgramme.JOURNALIERE) {
+      nextDate.setDate(now.getDate() + 1);
+      nextDate.setHours(heure, minute, 0, 0);
+    } else if (type === TypeProgramme.HEBDOMODAIRE) {
+      nextDate.setDate(now.getDate() + 7);
+      nextDate.setHours(heure, minute, 0, 0);
+    } else if (type === TypeProgramme.MENSUELLE) {
+      nextDate = new Date(now.getFullYear(), now.getMonth(), jour, heure, minute, 0);
+      if (nextDate <= now) {
+        nextDate.setMonth(now.getMonth() + 1);
+      }
+      if (nextDate.getDate() !== jour) {
+        nextDate.setMonth(now.getMonth() + 2);
+      }
     }
 
     return nextDate;
   }
 
-  @Cron('* * * * *') // Vérifie chaque minute
+  @Cron('* * * * *')
   async executeRecurringTransfers() {
     const now = new Date();
     
     const transfertsAExecuter = await this.prisma.transfertRecurrent.findMany({
-      where: {
+      where: { 
         statut: 'ACTIF',
-        prochainExecutionDate: {
-          lte: now,
-        },
+        prochainExecutionDate: { lte: now },
       },
       include: {
         emmeteur: true,
         recepteur: true,
       },
     });
-
+    console.log('Exécutant les transferts récurrants...', transfertsAExecuter.length);
 
     for (const transfert of transfertsAExecuter) {
       await this.executeRecurringTransfer(transfert);
@@ -118,7 +109,6 @@ export class TransfertRecurrentService {
   private async executeRecurringTransfer(transfert: any) {
     return await this.prisma.$transaction(async (tx) => {
       try {
-        // Vérifications
         const emetteur = await tx.compte.findUnique({
           where: { id: transfert.idEmeteur },
         });
@@ -133,7 +123,6 @@ export class TransfertRecurrentService {
         }
 
         if (emetteur.montant < transfert.montant) {
-          // Pour les transferts récurrents, on ne les annule pas mais on les suspend
           await this.suspendRecurringTransfer(transfert.id, 'Solde insuffisant');
           return;
         }
@@ -143,7 +132,6 @@ export class TransfertRecurrentService {
           return;
         }
 
-        // Exécuter le transfert
         await tx.compte.update({
           where: { id: transfert.idEmeteur },
           data: { montant: emetteur.montant - transfert.montant * 1.01 }
@@ -154,7 +142,6 @@ export class TransfertRecurrentService {
           data: { montant: recepteur.montant + transfert.montant }
         });
 
-        // Créer l'enregistrement de transaction
         await tx.transaction.create({
           data: {
             idEmeteur: transfert.idEmeteur,
@@ -167,7 +154,6 @@ export class TransfertRecurrentService {
           }
         });
 
-        // Notifications
         await tx.notification.create({
           data: {
             clientId: transfert.idEmeteur,
@@ -186,11 +172,11 @@ export class TransfertRecurrentService {
           }
         });
 
-        // Mettre à jour la date du prochain transfert
         const prochainExecutionDate = this.calculateNextExecutionDate(
           transfert.jourDuMois,
           transfert.heure,
-          transfert.minute
+          transfert.minute,
+          transfert.type
         );
 
         await tx.transfertRecurrent.update({
@@ -208,7 +194,7 @@ export class TransfertRecurrentService {
     });
   }
 
-   async suspendRecurringTransfer(id: number, raison: string) {
+  async suspendRecurringTransfer(id: number, raison: string) {
     await this.prisma.transfertRecurrent.update({
       where: { id },
       data: {
@@ -216,7 +202,6 @@ export class TransfertRecurrentService {
       }
     });
 
-    // Notifier l'émetteur de la suspension
     const transfert = await this.prisma.transfertRecurrent.findUnique({
       where: { id },
       include: {
@@ -246,7 +231,8 @@ export class TransfertRecurrentService {
     const prochainExecutionDate = this.calculateNextExecutionDate(
       transfert.jourDuMois,
       transfert.heure,
-      transfert.minute
+      transfert.minute,
+      transfert.type as TypeProgramme
     );
 
     return await this.prisma.transfertRecurrent.update({

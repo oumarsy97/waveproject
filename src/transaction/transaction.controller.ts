@@ -49,6 +49,6 @@ getProfile(@Req() req: Request & { user: number }) {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.transactionService.remove(+id);
-  }
+  } 
   
 }

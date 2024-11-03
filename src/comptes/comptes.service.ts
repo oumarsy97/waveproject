@@ -27,7 +27,23 @@ export class ComptesService {
   }
 
   findAll() {
-    return `This action returns all comptes`;
+    return  this.prisma.compte.findMany();
+  }
+
+  //others comptes client
+  async findbyCompte(id: number) {
+    return await this.prisma.compte.findMany({
+      where: { NOT: { id }, AND: { type: 'CLIENT' } },
+      include: {
+        Client: {
+          select: { 
+            nom: true,
+            prenom: true
+          }, 
+          take: 1 // Limiter le résultat à un seul client
+        }
+      },
+    });
   }
 
   async findOne(id: number) {

@@ -17,6 +17,7 @@ export class CreateTransactionDto {
   
   
   @IsString()
+  @ApiProperty()
   type : 'DEPOT' | 'RETRAIT';
 
  
