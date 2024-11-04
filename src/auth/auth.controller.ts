@@ -18,4 +18,9 @@ export class AuthController {
     
     return this.authService.login(client);
   }
+
+  @Post('logout')
+  async logout(@Body() client: { id: number }) {
+    return this.authService.logout(client);
+  }
 }

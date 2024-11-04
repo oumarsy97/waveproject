@@ -10,7 +10,7 @@ export class ComptesService {
   constructor(private prisma: PrismaService) {}
 
   create(createCompteDto: CreateCompteDto) {
-    return 'This action adds a new compte';
+    return this.prisma.compte.create({ data: createCompteDto });
   }
 
   // Récupération du compte à partir du token

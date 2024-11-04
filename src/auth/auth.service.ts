@@ -48,6 +48,15 @@ export class AuthService {
     };
   }
 
+  //logout
+  async logout(client: { id: number }) {
+    await this.prisma.code.deleteMany({
+      where: {
+        idCompte: client.id
+      }
+    })
+  }
+
   // Fonction pour générer un code SMS aléatoire (ex. 4 chiffres)
   private generateSmsCode(): number {
     return Math.floor(1000 + Math.random() * 9000); // Génère un code entre 1000 et 9999

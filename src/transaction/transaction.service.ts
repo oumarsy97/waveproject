@@ -165,14 +165,23 @@ export class TransactionService {
       return await this.prisma.transaction.findMany({
         where: { OR: [{ idEmeteur: id }, { idClient: id }] },
         include: {
-          compte: true,
+          compte: {
+            include: {
+              Client: true
+            }
+          },
           operateur: {
             select: {
               nom: true,
               prenom: true
             } 
           },
-          emeteur: true,
+          emeteur: {
+            include: {
+              Client: true
+            }
+          },
+          
           
 
         },

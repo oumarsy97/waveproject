@@ -2,6 +2,7 @@ import { Controller, Post, Body, Get, Param, Delete, UseGuards, Req, Patch } fro
 import { TransfertRecurrentService, CreateRecurringTransferDto } from './transfert-recurent.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
+import { use } from 'passport';
 
 @Controller('transfert-recurrent')
 @ApiTags('Transfert Récurrent')
@@ -19,6 +20,16 @@ export class TransfertRecurrentController {
   @ApiOperation({ summary: 'Obtenir mes transferts récurrents' })
   findAll(@Req() req: Request & { user: number }) {
     return this.service.findAllRecurringTransfers(req.user);
+  }
+
+  @Get('mytransfers')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtenir mes transferts récurrents' })
+  mytransfert ( @Req() req: Request & { user: number }) {
+    //recuperer l'id du client
+    const user = req.user;
+
+    return this.service.findAllRecurringTransfers(user);
   }
 
   @Patch(':id/suspend')

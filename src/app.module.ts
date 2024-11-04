@@ -17,13 +17,15 @@ import { TransfertModule } from './transfert/transfert.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TransfertRecurentModule } from './transfert-recurent/transfert-recurent.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ServicesModule } from './services/services.module';
+import { CategorieservicesModule } from './categorieservices/categorieservices.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true, // Pour rendre ConfigModule global
-    }),ClientsModule, PrismaModule, CodesModule, AuthModule, ComptesModule, SmsModule, TransactionModule, TransfertModule, TransfertRecurentModule, NotificationsModule],
+    }),ClientsModule, PrismaModule, CodesModule, AuthModule, ComptesModule, SmsModule, TransactionModule, TransfertModule, TransfertRecurentModule, NotificationsModule, ServicesModule, CategorieservicesModule],
   controllers: [AppController, ProtectedController, ComptesController],
   providers: [AppService, ClientsModule, ComptesService, SmsService],
 }) 
