@@ -190,7 +190,7 @@ model Operateur {
 model Transaction {
   id          Int      @id @default(autoincrement())
   montant     Int
-  idOperateur Int?
+  idOperateur Int? 
   idClient    Int
   idEmeteur   Int?
   emeteur     Compte?   @relation("ClientSentTransfert", fields: [idEmeteur], references: [id])
